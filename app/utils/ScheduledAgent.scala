@@ -3,31 +3,28 @@ package utils
 import akka.actor.{Cancellable, ActorSystem}
 import akka.agent.Agent
 import scala.concurrent.duration._
-import scala.language.postfixOps
 import org.joda.time.{DateTime, Interval, LocalDate, LocalTime}
-import scala.concurrent.ExecutionContext
+import scala.language.postfixOps
 
 object ScheduledAgent extends LifecycleWithoutApp {
-  var scheduleSystem:Option[ActorSystem] = None
+  val scheduleSystem = ActorSystem("scheduled-agent")
 
-  def apply[T](initialDelay: FiniteDuration, frequency: FiniteDuration)(block: => T)(implicit ec:ExecutionContext): ScheduledAgent[T] = {
+  def apply[T](initialDelay: FiniteDuration, frequency: FiniteDuration)(block: => T): ScheduledAgent[T] = {
     ScheduledAgent(initialDelay, frequency, block)(_ => block)
   }
 
-  def apply[T](initialDelay: FiniteDuration, frequency: FiniteDuration, initialValue: T)(block: T => T)(implicit ec:ExecutionContext): ScheduledAgent[T] = {
+  def apply[T](initialDelay: FiniteDuration, frequency: FiniteDuration, initialValue: T)(block: T => T): ScheduledAgent[T] = {
     ScheduledAgent(initialValue, PeriodicScheduledAgentUpdate(block, initialDelay, frequency))
   }
 
-  def apply[T](initialValue: T, updates: ScheduledAgentUpdate[T]*)(implicit ec:ExecutionContext): ScheduledAgent[T] = {
-    new ScheduledAgent(scheduleSystem.get, initialValue, updates:_*)
+  def apply[T](initialValue: T, updates: ScheduledAgentUpdate[T]*): ScheduledAgent[T] = {
+    new ScheduledAgent(scheduleSystem, initialValue, updates:_*)
   }
 
-  def init() {
-    scheduleSystem = Some(ActorSystem("scheduled-agent"))
-  }
+  def init() {}
 
   def shutdown() {
-    scheduleSystem.foreach(_.shutdown())
+    scheduleSystem.shutdown()
   }
 }
 
@@ -57,7 +54,7 @@ case class DailyScheduledAgentUpdate[T](block: T => T, timeOfDay: LocalTime) ext
     val executionToday = (new LocalDate()).toDateTime(timeOfDay)
 
     val interval = if (executionToday.isAfterNow)
-      // today if before the time of day
+    // today if before the time of day
       new Interval(new DateTime(), executionToday)
     else {
       // tomorrow if after the time of day
@@ -71,9 +68,10 @@ object DailyScheduledAgentUpdate {
   def apply[T](timeOfDay: LocalTime)(block: T => T): DailyScheduledAgentUpdate[T] = DailyScheduledAgentUpdate(block, timeOfDay)
 }
 
-class ScheduledAgent[T](system: ActorSystem, initialValue: T, updates: ScheduledAgentUpdate[T]*)(implicit ec:ExecutionContext) extends Logging {
+class ScheduledAgent[T](system: ActorSystem, initialValue: T, updates: ScheduledAgentUpdate[T]*) extends Logging {
 
-  val agent = Agent[T](initialValue)(system)
+  val agent = Agent[T](initialValue)(system.dispatcher)
+  implicit val executionContext = system.dispatcher
 
   val cancellablesAgent = Agent[Map[ScheduledAgentUpdate[T],Cancellable]]{
     updates.map { update =>
@@ -87,7 +85,7 @@ class ScheduledAgent[T](system: ActorSystem, initialValue: T, updates: Scheduled
       }
       update -> cancellable
     }.toMap
-  }(system)
+  }(system.dispatcher)
 
   def scheduleNext(update: DailyScheduledAgentUpdate[T]): Cancellable = {
     val delay = update.timeToNextExecution

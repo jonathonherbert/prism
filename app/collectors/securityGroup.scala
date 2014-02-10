@@ -10,6 +10,8 @@ import scala.collection.JavaConversions._
 import controllers.{Prism, routes}
 import java.net.URI
 import org.jclouds.net.domain.IpPermission
+import org.jclouds.logging.slf4j.config.SLF4JLoggingModule
+import org.jclouds.domain.LocationBuilder
 
 object SecurityGroupCollectorSet extends CollectorSet[SecurityGroup](ResourceType("security-group", Duration.standardMinutes(15L))) {
   def lookupCollector: PartialFunction[Origin, Collector[SecurityGroup]] = {
@@ -18,11 +20,11 @@ object SecurityGroupCollectorSet extends CollectorSet[SecurityGroup](ResourceTyp
   }
 }
 
-trait SecurtiyGroupBuilder {
+trait SecurtiyGroupBuilder extends Logging {
   def originVendor:String
   def originAccount(group:JCSecurityGroup):String
-  def fromJCloud(secGroup: JCSecurityGroup, lookup:Map[String,SecurityGroup]): SecurityGroup = {
 
+  def fromJCloud(secGroup: JCSecurityGroup, lookup:Map[String,SecurityGroup]): SecurityGroup = {
     def groupRefs(rule: IpPermission): Seq[SecurityGroupRef] = {
       val tenantIdGroupNamePairs = rule.getTenantIdGroupNamePairs.asMap.toMap.mapValues(_.toSeq)
       val tenantIdSGRefs = tenantIdGroupNamePairs.flatMap { case (account, groups) =>
@@ -35,6 +37,8 @@ trait SecurtiyGroupBuilder {
         SecurityGroupRef(group, None, lookup.get(group).map(_.id))
       }
     }
+
+    log.info(s"Location: ${secGroup.getLocation}")
 
     val rules = secGroup.getIpPermissions.map { rule =>
       Rule(
@@ -79,21 +83,32 @@ case class AWSSecurityGroupCollector(origin:AmazonOrigin, resource:ResourceType)
 }
 
 case class OSSecurityGroupCollector(origin:OpenstackOrigin, resource:ResourceType)
-    extends Collector[SecurityGroup] with SecurtiyGroupBuilder {
+    extends Collector[SecurityGroup] with SecurtiyGroupBuilder with Logging {
   val originVendor = origin.vendor
   def originAccount(group:JCSecurityGroup) = origin.tenant
 
+  lazy val loggingModule = Set(new SLF4JLoggingModule())
+
   lazy val context = ContextBuilder.newBuilder("openstack-nova")
     .endpoint(origin.endpoint)
+    .modules(loggingModule)
     .credentials(s"${origin.tenant}:${origin.user}", origin.secret)
     .build(classOf[ComputeServiceContext])
   lazy val compute = context.getComputeService
+
   lazy val securityGroupExtension = compute.getSecurityGroupExtension.get
 
   def crawl: Iterable[SecurityGroup] = {
+    log.info(s"Starting to crawl security groups for $origin")
+    log.info(s"Getting existing groups")
     val existingGroups = Prism.securityGroupAgent.get().flatMap(_.data).map(sg => s"${sg.location}/${sg.groupId}" -> sg).toMap
-    val secGroups = securityGroupExtension.listSecurityGroups
-    secGroups.map ( fromJCloud(_, existingGroups) )
+    log.info(s"Got existing groups (${existingGroups.size})")
+    log.info(s"Getting security groups")
+    val secGroups = securityGroupExtension.listSecurityGroupsInLocation(origin.jCloudLocation)
+    log.info(s"Processing security groups")
+    val result = secGroups.map ( fromJCloud(_, existingGroups) )
+    log.info(s"Completed crawl of security groups for $origin")
+    result
   }
 }
 

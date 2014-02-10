@@ -21,7 +21,9 @@
         </encoder>
     </appender>
 
-    <logger name="com.amazonaws.request" level="WARN" />
+    <logger name="jclouds.headers" level="DEBUG" />
+    <!--<logger name="jclouds.wire" level="DEBUG" />-->
+    <logger name="org.jclouds" level="TRACE" />
 
     <root level="INFO">
         <appender-ref ref="LOGFILE"/>

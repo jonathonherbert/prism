@@ -49,12 +49,15 @@ class CollectorAgent[T<:IndexedItem](val collectors:Seq[Collector[T]], lazyStart
 
     datumAgents = collectors.map { collector =>
       val initial = if (lazyStartup) {
+        log.info("lazy startup - using empty collection for initialisation")
         val startupData = Datum.empty[T](collector)
         CollectorAgent.update(startupData.label)
         startupData
       } else {
+        log.info("initialising data")
         val startupData = update(collector, Datum.empty[T](collector))
         assert(!startupData.label.isError, s"Error occured collecting data when lazy startup is disabled: ${startupData.label}")
+        log.info("initialising done")
         startupData
       }
 
@@ -76,7 +79,7 @@ case class SourceStatus(state: Label, error: Option[Label] = None) {
 }
 
 object CollectorAgent {
-  implicit val actorSystem = ActorSystem("collector-agent")
+  implicit val ec = ActorSystem("collector-agent").dispatcher
   val labelAgent = Agent[Map[(ResourceType, Origin),SourceStatus]](Map.empty)
 
   def update(label:Label) {

@@ -34,6 +34,7 @@ case class OpenstackOrigin(endpoint:String, region:String, tenant:String, user:S
   lazy val account = s"$tenant@$region"
   override lazy val filterMap = Map("vendor" -> vendor, "region" -> region, "account" -> tenant, "accountName" -> tenant)
   override def transformInstance(input:Instance): Instance = stagePrefix.map(input.prefixStage).getOrElse(input)
+  lazy val jCloudLocation = new LocationBuilder().scope(LocationScope.ZONE).id(region).description("zone").build()
 }
 case class JsonOrigin(vendor:String, account:String, url:String, resources:Set[String]) extends Origin {
   private val classpathHandler = new URLStreamHandler {
