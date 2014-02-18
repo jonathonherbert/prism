@@ -10,11 +10,11 @@ import utils.Logging
 import org.jclouds.openstack.nova.v2_0.NovaApi
 import org.jclouds.openstack.nova.v2_0.domain.Server
 import java.net.InetAddress
-import conf.Configuration.accounts
-import play.api.libs.json.Json
-import play.api.mvc.Call
+import play.api.libs.json._
 import controllers.routes
 import scala.language.postfixOps
+import scala.Some
+import play.api.mvc.Call
 
 object InstanceCollectorSet extends CollectorSet[Instance](ResourceType("instance", Duration.standardMinutes(15L))) {
   val lookupCollector: PartialFunction[Origin, Collector[Instance]] = {
@@ -62,6 +62,7 @@ case class AWSInstanceCollector(origin:AmazonOrigin, resource:ResourceType) exte
     getReservationInstances.map { case (reservation, instance) =>
       Instance.fromApiData(
         id = s"arn:aws:ec2:${origin.region}:${reservation.getOwnerId}:instance/${instance.getId}",
+        origin = origin,
         name = instance.getDnsName,
         vendorState = Some(instance.getInstanceState.value),
         group = instance.getAvailabilityZone,
@@ -111,6 +112,7 @@ case class OSInstanceCollector(origin:OpenstackOrigin, resource:ResourceType) ex
       val instanceId = s.getExtendedAttributes.asSet.headOption.map(_.getInstanceName).getOrElse("UNKNOWN").replace("instance", "i")
       Instance.fromApiData(
         id = s"arn:openstack:ec2:${origin.region}:${origin.tenant}:instance/$instanceId",
+        origin = origin,
         name = dnsName,
         vendorState = Some(s.getStatus.value),
         group = origin.region,
@@ -131,6 +133,7 @@ case class OSInstanceCollector(origin:OpenstackOrigin, resource:ResourceType) ex
 
 object Instance {
   def fromApiData( id: String,
+             origin: Origin,
              name: String,
              vendorState: Option[String],
              group: String,
@@ -149,6 +152,7 @@ object Instance {
 
     apply(
       id = id,
+      origin = origin,
       name = name,
       vendorState = vendorState,
       group = group,
@@ -203,6 +207,7 @@ case class InstanceSpecification(image:String, instanceType:String)
 
 case class Instance(
                  id: String,
+                 origin: Origin,
                  name: String,
                  vendorState: Option[String],
                  group: String,

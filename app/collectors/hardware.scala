@@ -20,7 +20,7 @@ case class JsonHardwareCollector(origin:JsonOrigin, resource: ResourceType) exte
   implicit val hardwareReads = Json.reads[HardwareJson]
 
   def crawl: Iterable[Hardware] = crawlJson
-  def translate(input: HardwareJson): Hardware = Hardware.fromJson(input)
+  def translate(input: HardwareJson): Hardware = Hardware.fromJson(input, origin)
 }
 
 case class HardwareJson(
@@ -47,11 +47,12 @@ case class LogicalInterfaceJson(
 
 
 object Hardware {
-  def fromJson(i: HardwareJson):Hardware = {
+  def fromJson(i: HardwareJson, o:Origin):Hardware = {
     val id = s"arn:${i.vendor}:hardware:${i.region}:asset/${i.asset}"
     val dnsName = s"${i.hostname}.${i.domain}"
     Hardware(
       id,
+      o,
       i.asset,
       i.hostname,
       i.domain,
@@ -71,6 +72,7 @@ object Hardware {
 
 case class Hardware(
     id: String,
+    origin: Origin,
     asset: String,
     hostname: String,
     domain: String,

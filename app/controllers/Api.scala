@@ -110,6 +110,7 @@ object ApiResult extends Logging {
           val account = "unknown"
           val vendor = "unknown"
           val resources = Set.empty[String]
+          val jsonFields = Seq.empty
         },
         source.lastUpdated
       )

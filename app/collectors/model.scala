@@ -15,6 +15,7 @@ import play.api.mvc.Call
 import org.jclouds.domain.{LocationScope, LocationBuilder}
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import play.api.libs.json.Json.JsValueWrapper
 
 trait Origin {
   def vendor: String
@@ -22,18 +23,23 @@ trait Origin {
   def filterMap: Map[String,String] = Map.empty
   def resources: Set[String]
   def transformInstance(input: Instance): Instance = input
+  def standardFields: Seq[(String, JsValueWrapper)] = Seq("vendor" -> vendor, "accountName" -> account)
+  def jsonFields: Seq[(String, JsValueWrapper)]
+  def toJson: JsObject = Json.obj(standardFields ++ jsonFields:_*)
 }
 
 case class AmazonOrigin(account:String, region:String, accessKey:String, resources:Set[String])(val secretKey:String) extends Origin {
   lazy val vendor = "aws"
   override lazy val filterMap = Map("vendor" -> vendor, "region" -> region, "accountName" -> account)
   lazy val jCloudLocation = new LocationBuilder().scope(LocationScope.REGION).id(region).description("region").build()
+  val jsonFields:Seq[(String, JsValueWrapper)] = Seq("region" -> region)
 }
 case class OpenstackOrigin(endpoint:String, region:String, tenant:String, user:String, resources:Set[String], stagePrefix: Option[String])(val secret:String) extends Origin {
   lazy val vendor = "openstack"
   lazy val account = s"$tenant@$region"
   override lazy val filterMap = Map("vendor" -> vendor, "region" -> region, "account" -> tenant, "accountName" -> tenant)
   override def transformInstance(input:Instance): Instance = stagePrefix.map(input.prefixStage).getOrElse(input)
+  val jsonFields:Seq[(String, JsValueWrapper)] = Seq("region" -> region, "tenant" -> tenant)
 }
 case class JsonOrigin(vendor:String, account:String, url:String, resources:Set[String]) extends Origin {
   private val classpathHandler = new URLStreamHandler {
@@ -52,14 +58,17 @@ case class JsonOrigin(vendor:String, account:String, url:String, resources:Set[S
     val jsonText = Source.fromURL(actualUrl, "utf-8").getLines().mkString
     Json.parse(jsonText)
   }
+  val jsonFields:Seq[(String, JsValueWrapper)] = Seq("url" -> url)
 }
 case class GoogleDocOrigin(name: String, docUrl:URL, resources:Set[String]) extends Origin {
   lazy val vendor = "google-doc"
   lazy val account = name
+  val jsonFields:Seq[(String, JsValueWrapper)] = Seq("name" -> name, "docUrl" -> docUrl.toString)
 }
 
 trait IndexedItem {
   def id: String
+  def origin: Origin
   def callFromId: String => Call
   def call: Call = callFromId(id)
   def fieldIndex: Map[String, String] = Map("id" -> id)
@@ -116,6 +125,9 @@ trait JsonCollector[T] extends JsonCollectorTranslator[T,T] with Logging {
 
 trait JsonCollectorTranslator[F,T] extends Collector[T] with Logging {
   def origin:JsonOrigin
+  implicit val originReads = new Reads[Origin] {
+    def reads(json: JsValue): JsResult[Origin] = JsSuccess(origin)
+  }
   def json:JsValue = origin.data(resource)
   def crawlJson(implicit writes:Reads[F]):Iterable[T] = {
     try {

@@ -102,6 +102,7 @@ object CollectorAgent {
         val vendor = "prism"
         val account = "prism"
         val resources = Set("sources")
+        val jsonFields = Seq.empty
       },
       oldestDate
     )

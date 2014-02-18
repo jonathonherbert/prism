@@ -12,12 +12,13 @@ object DataCollectorSet extends CollectorSet[Data](ResourceType("data", Duration
 }
 
 case class JsonDataCollector(origin:JsonOrigin, resource: ResourceType) extends JsonCollector[Data] {
+
   implicit val valueReads = Json.reads[Value]
   implicit val dataReads = Json.reads[Data]
   def crawl: Iterable[Data] = crawlJson
 }
 
-case class Data( key:String, values:Seq[Value]) extends IndexedItem {
+case class Data( key:String, values:Seq[Value], origin:Origin) extends IndexedItem {
   def id: String = s"arn:gu:data:key/$key"
   def callFromId: (String) => Call = id => routes.Api.data(id)
   def firstMatchingData(stack:Option[String], app:String, stage:String): Option[Value] = {
