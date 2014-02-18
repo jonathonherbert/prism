@@ -108,6 +108,7 @@ case class OSSecurityGroupCollector(origin:OpenstackOrigin, resource:ResourceTyp
     log.info(s"Processing security groups")
     val result = secGroups.map ( fromJCloud(_, existingGroups) )
     log.info(s"Completed crawl of security groups for $origin")
+    log.info(s"Total groups = ${result.size}  Total rules = ${result.flatMap(_.rules).size}")
     result
   }
 }
