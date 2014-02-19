@@ -10,7 +10,7 @@ object OwnerCollectorSet extends CollectorSet[Owner](ResourceType("owner", Durat
   }
 }
 
-case class Owner(id:String, origin:Origin, stack:String, apps:Seq[String], name:String, email:String, phone:Option[String]) extends IndexedItem {
+case class Owner(id:String, stack:String, apps:Seq[String], name:String, email:String, phone:Option[String]) extends IndexedItem {
   def callFromId: (String) => Call = id => routes.Api.owner(id)
 }
 
@@ -23,7 +23,7 @@ case class GoogleDocOwnerCollector(origin: GoogleDocOrigin, resource: ResourceTy
     record match {
       case List(stack, app, name, email, phone) =>
         val appList = app.split(",").filterNot(_.isEmpty)
-        Owner(index.toString, origin, stack, appList, name, email, toOption(phone))
+        Owner(index.toString, stack, appList, name, email, toOption(phone))
     }
   }
 }

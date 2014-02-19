@@ -2,14 +2,12 @@ package collectors
 
 import org.joda.time.Duration
 import play.api.mvc.Call
-import utils.Logging
 import org.jclouds.ContextBuilder
 import org.jclouds.compute.ComputeServiceContext
 import org.jclouds.compute.domain.{ SecurityGroup => JCSecurityGroup }
 import org.jclouds.openstack.nova.v2_0.domain.{SecurityGroup => NovaSecurityGroup, SecurityGroupRule}
 import scala.collection.JavaConversions._
 import controllers.{Prism, routes}
-import java.net.URI
 import org.jclouds.net.domain.IpPermission
 import org.jclouds.openstack.nova.v2_0.NovaApi
 
@@ -52,7 +50,6 @@ case class AWSSecurityGroupCollector(origin:AmazonOrigin, resource:ResourceType)
     secGroup.getName
     SecurityGroup(
       s"arn:$originVendor:ec2:${secGroup.getLocation.getId}:${originAccount(secGroup)}:security-group/${secGroup.getProviderId}",
-      origin,
       secGroup.getProviderId,
       secGroup.getName,
       secGroup.getLocation.getId,
@@ -105,7 +102,6 @@ case class OSSecurityGroupCollector(origin:OpenstackOrigin, resource:ResourceTyp
     }
     SecurityGroup(
       s"arn:$originVendor:ec2:${origin.region}:${origin.tenant}:security-group/${secGroup.getName}",
-      origin,
       secGroup.getId,
       secGroup.getName,
       secGroup.getTenantId,
@@ -132,7 +128,6 @@ case class Rule( protocol:String,
                  sourceGroupRefs:Option[Seq[SecurityGroupRef]] )
 
 case class SecurityGroup(id:String,
-                         origin: Origin,
                          groupId:String,
                          name:String,
                          location:String,
