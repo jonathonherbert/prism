@@ -91,15 +91,17 @@ case class OSSecurityGroupCollector(origin:OpenstackOrigin, resource:ResourceTyp
       }.toSeq
     }
 
-    val rules = secGroup.getRules.map { rule =>
-      Rule(
-        rule.getIpProtocol.toString,
-        rule.getFromPort,
-        rule.getToPort,
-        Option(rule.getIpRange).toSeq.wrap,
-        groupRefs(rule).wrap
-      )
-    }
+    val rules = Option(secGroup.getRules).map { rules =>
+      rules.map { rule =>
+        Rule(
+          rule.getIpProtocol.toString,
+          rule.getFromPort,
+          rule.getToPort,
+          Option(rule.getIpRange).toSeq.wrap,
+          groupRefs(rule).wrap
+        )
+      }
+    }.flatten
     SecurityGroup(
       s"arn:$originVendor:ec2:${origin.region}:${origin.tenant}:security-group/${secGroup.getName}",
       secGroup.getId,
