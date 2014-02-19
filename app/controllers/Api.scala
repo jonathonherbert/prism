@@ -166,9 +166,9 @@ object Api extends Controller with Logging {
       if (notInitialisedSources.isEmpty) Map.empty else Map(sources.label -> notInitialisedSources)
     } { notInitialisedSources =>
       if (notInitialisedSources.isEmpty)
-        Json.obj("sources" -> "initialised")
+        Json.obj("healthcheck" -> "initialised")
       else
-        throw new ApiCallException(Json.obj("sources" -> "not yet initialised"))
+        throw new ApiCallException(Json.obj("healthcheck" -> "not yet initialised", "sources" -> notInitialisedSources), SERVICE_UNAVAILABLE)
     }
   }
 
