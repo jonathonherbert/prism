@@ -1,7 +1,6 @@
 [
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000d44",
-        "origin": {},
         "name": "10-252-193-129.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -32,7 +31,6 @@
     },
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000d43",
-        "origin": {},
         "name": "10-252-193-128.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -63,7 +61,6 @@
     },
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000cfe",
-        "origin": {},
         "name": "10-252-193-102.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -91,7 +88,6 @@
     },
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000cfd",
-        "origin": {},
         "name": "10-252-193-101.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -119,7 +115,6 @@
     },
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000cfc",
-        "origin": {},
         "name": "10-252-193-100.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -147,7 +142,6 @@
     },
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000cdf",
-        "origin": {},
         "name": "10-252-193-119.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -175,7 +169,6 @@
     },
     {
         "id": "arn:openstack:ec2:dev1:websys:instance/i-00000cde",
-        "origin": {},
         "name": "10-252-193-118.gc2.dev.dc1.gnm",
         "vendorState": "ACTIVE",
         "group": "dev1",
@@ -203,7 +196,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:362307275615:instance/i-6cd9b11a",
-        "origin": {},
         "name": "ec2-46-137-42-15.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1c",
@@ -231,7 +223,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:362307275615:instance/i-29f73c5f",
-        "origin": {},
         "name": "ec2-46-137-99-242.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1c",
@@ -259,7 +250,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:649430877268:instance/i-129d0559",
-        "origin": {},
         "name": "ec2-54-247-17-171.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1a",
@@ -288,7 +278,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:649430877268:instance/i-c482158f",
-        "origin": {},
         "name": "ec2-46-51-157-62.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1c",
@@ -317,7 +306,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:649430877268:instance/i-dc821597",
-        "origin": {},
         "name": "ec2-46-137-39-49.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1a",
@@ -346,7 +334,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:649430877268:instance/i-485fc803",
-        "origin": {},
         "name": "ec2-46-137-11-19.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1c",
@@ -375,7 +362,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:649430877268:instance/i-da821591",
-        "origin": {},
         "name": "ec2-46-137-72-83.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1c",
@@ -404,7 +390,6 @@
     },
     {
         "id": "arn:aws:ec2:eu-west-1:649430877268:instance/i-d2821599",
-        "origin": {},
         "name": "ec2-176-34-168-84.eu-west-1.compute.amazonaws.com",
         "vendorState": "running",
         "group": "eu-west-1b",
