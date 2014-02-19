@@ -10,11 +10,11 @@ import utils.Logging
 import org.jclouds.openstack.nova.v2_0.NovaApi
 import org.jclouds.openstack.nova.v2_0.domain.Server
 import java.net.InetAddress
-import play.api.libs.json._
+import conf.Configuration.accounts
+import play.api.libs.json.Json
+import play.api.mvc.Call
 import controllers.routes
 import scala.language.postfixOps
-import scala.Some
-import play.api.mvc.Call
 
 object InstanceCollectorSet extends CollectorSet[Instance](ResourceType("instance", Duration.standardMinutes(15L))) {
   val lookupCollector: PartialFunction[Origin, Collector[Instance]] = {
