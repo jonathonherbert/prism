@@ -180,10 +180,14 @@ def display_selectah(matching, options, noun)
     results = Hash[results.collect { |parts| [ parts.join("\t"), parts[3] ]}]
 
     prompt = TTY::Prompt.new
-    result = prompt.select("Choose your destiny", results)
 
-    command = "ssh ubuntu@#{result}"
-    system(command)
+    begin
+      result = prompt.select("Choose your destiny", results)
+      command = "ssh ubuntu@#{result}"
+      system(command)
+    rescue TTY::Reader::InputInterrupt
+    
+    end
   end
 end
 
