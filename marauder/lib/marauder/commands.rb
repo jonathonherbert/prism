@@ -6,9 +6,10 @@ require 'httparty'
 require 'net/ssh'
 require 'commander/import'
 require 'yaml'
+require 'tty-prompt'
 
 program :version, Marauder::VERSION
-program :description, 'command-line tool to locate infrastructure'
+program :description, 'command-line tool to locate infrastructure Y"ALL'
 
 # Load config file
 CONFIG_FILE = "#{ENV['HOME']}/.config/marauder/defaults.yaml"
@@ -161,6 +162,40 @@ def display_results(matching, options, noun)
   end
 end
 
+def display_selectah(matching, options, noun)
+  if matching.empty?
+    STDERR.puts "No #{noun} found"
+  else
+    STDERR.puts "#{matching.length} results"
+    field_name = options.field || nil
+
+    results = matching.map { |host|
+      app = host['app'].join(',')
+      app = host['mainclasses'].join(',') if app.length == 0
+      app
+
+      parts = [host['stage'], host['stack'], app, get_field(host, field_name), host['createdAt']]
+      parts.join("\t")
+    }
+
+    prompt = TTY::Prompt.new
+    result = prompt.select("Choose your destiny", results)
+
+    # print results
+
+    # field_name = options.field || nil
+    # if options.short
+    #   matching.map { |host| get_field(host, field_name) }.compact.each{ |value| puts value }
+    # else
+    #   puts table(matching.map { |host|
+    #     app = host['app'].join(',')
+    #     app = host['mainclasses'].join(',') if app.length == 0
+    #     [host['stage'], host['stack'], app, get_field(host, field_name), host['createdAt']]
+    #   })
+    # end
+  end
+end
+
 ###### COMMANDS ######
 
 command :hosts do |c|
@@ -169,7 +204,7 @@ command :hosts do |c|
   c.option '-s', '--short', 'Only return hostnames'
   c.option '-f', '--field STRING', String, 'Use specified field from prism'
   c.action do |args, options|
-    display_results(find_hosts(args), options, 'hosts')
+    display_selectah(find_hosts(args), options, 'hosts')
   end
 end
 
@@ -179,7 +214,7 @@ command :instances do |c|
   c.option '-s', '--short', 'Only return hostnames'
   c.option '-f', '--field STRING', String, 'Use specified field from prism'
   c.action do |args, options|
-    display_results(find_instances(args), options, 'instances')
+    display_selectah(find_instances(args), options, 'instances')
   end
 end
 
@@ -189,7 +224,7 @@ command :hardware do |c|
   c.option '-s', '--short', 'Only return hostnames'
   c.option '-f', '--field STRING', String, 'Use specified field from prism'
   c.action do |args, options|
-    display_results(find_hardware(args), options, 'hardware')
+    display_selectah(find_hardware(args), options, 'hardware')
   end
 end
 
