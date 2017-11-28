@@ -42,14 +42,18 @@ MAX_SSH_HOSTS = 4
 
 LOGGED_IN_USER = ENV['USER']
 
-def table(rows)
+def table_rows(rows)
   lengths = rows.map { |row| row.map { |value| value.nil? ? 0 : value.size } }
   col_widths = lengths.transpose.map { |column| column.max }
   rows.map { |row| 
     col_widths.each_with_index.map { |width, index| 
       (row[index] || "").ljust(width)
     }.join("\t")
-  }.join("\n")
+  }
+end
+
+def table(rows)
+  table_rows.join("\n")
 end
 
 def tokenize(s)
@@ -177,7 +181,12 @@ def display_selectah(matching, options, noun)
       [host['stage'], host['stack'], app, hostname, host['createdAt']]
     }
 
-    results = Hash[results.collect { |parts| [ parts.join("\t"), parts[3] ]}]
+    rows = table_rows(results)
+    hostnames = results.map { |result| result[3] }
+
+    results = Hash[rows.zip(hostnames).collect { |result|
+      [ result[0], result[1] ]
+    }]
 
     prompt = TTY::Prompt.new
 
@@ -186,7 +195,6 @@ def display_selectah(matching, options, noun)
       command = "ssh ubuntu@#{result}"
       system(command)
     rescue TTY::Reader::InputInterrupt
-    
     end
   end
 end
