@@ -182,18 +182,8 @@ def display_selectah(matching, options, noun)
     prompt = TTY::Prompt.new
     result = prompt.select("Choose your destiny", results)
 
-    print result
-
-    # field_name = options.field || nil
-    # if options.short
-    #   matching.map { |host| get_field(host, field_name) }.compact.each{ |value| puts value }
-    # else
-    #   puts table(matching.map { |host|
-    #     app = host['app'].join(',')
-    #     app = host['mainclasses'].join(',') if app.length == 0
-    #     [host['stage'], host['stack'], app, get_field(host, field_name), host['createdAt']]
-    #   })
-    # end
+    command = "ssh ubuntu@#{result}"
+    system(command)
   end
 end
 
