@@ -37,7 +37,8 @@ case class Value( stack: String,
                   app: String,
                  stage: String,
                  value: String,
-                 comment: Option[String] ) {
+                 comment: Option[String],
+                 role: Option[String] = None) {
   lazy val stackRegex = s"^$stack$$".r
   lazy val appRegex = s"^$app$$".r
   lazy val stageRegex = s"^$stage$$".r
