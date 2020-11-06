@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import akka.actor.ActorSystem
 
 import scala.concurrent.ExecutionContext
+import scala.util.Success
 
 class CollectorAgent[T<:IndexedItem](val collectorSet: CollectorSet[T], sourceStatusAgent: SourceStatusAgent, lazyStartup:Boolean = true)(actorSystem: ActorSystem) extends CollectorAgentTrait[T] with Logging with LifecycleWithoutApp {
 
@@ -104,12 +105,14 @@ case class SourceStatus(state: Label, error: Option[Label] = None) {
   lazy val latest: Label = error.getOrElse(state)
 }
 
-class SourceStatusAgent(actorSystem: ActorSystem) {
+class SourceStatusAgent(actorSystem: ActorSystem) extends Logging {
   implicit private val collectorAgent: ExecutionContext = actorSystem.dispatchers.lookup("collectorAgent")
   val sourceStatusAgent: Agent[Map[(ResourceType, Origin), SourceStatus]] = Agent(Map.empty)
 
+  var initialised = false
+
   def update(label:Label):Unit = {
-    sourceStatusAgent.send { previousMap =>
+    sourceStatusAgent.alter { previousMap =>
       val key = (label.resource, label.origin)
       val previous = previousMap.get(key)
       val next = label match {
@@ -117,6 +120,17 @@ class SourceStatusAgent(actorSystem: ActorSystem) {
         case bad => SourceStatus(previous.map(_.state).getOrElse(bad), Some(bad))
       }
       previousMap + (key -> next)
+    } onComplete {
+      case Success(newMap) =>
+        if (!initialised) {
+          val uninitialisedSources = newMap.values.count(_.state.status != "success")
+          if (uninitialisedSources == 0) {
+            log.info("All sources now healthy")
+            initialised = true
+          } else {
+            log.info(s"$uninitialisedSources out of ${newMap.size} sources still not healthy")
+          }
+        }
     }
   }
 
