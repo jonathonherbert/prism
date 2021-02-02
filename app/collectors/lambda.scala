@@ -1,11 +1,11 @@
 package collectors
 
 import agent._
-import software.amazon.awssdk.services.lambda.LambdaClient
-import software.amazon.awssdk.services.lambda.model.{FunctionConfiguration, ListTagsRequest}
 import conf.AWS
 import controllers.routes
 import play.api.mvc.Call
+import software.amazon.awssdk.services.lambda.LambdaClient
+import software.amazon.awssdk.services.lambda.model.{FunctionConfiguration, ListEventSourceMappingsRequest, ListTagsRequest}
 import utils.Logging
 
 import scala.jdk.CollectionConverters._
@@ -41,11 +41,17 @@ case class AWSLambdaCollector(origin: AmazonOrigin, resource: ResourceType, craw
 
 object Lambda {
 
+  def getLambdaEventSource(lambda: FunctionConfiguration): Option[String] = {
+    val req = ListEventSourceMappingsRequest.builder.functionName(lambda.functionArn).build
+    Some(req.eventSourceArn)
+  }
+
   def fromApiData(lambda: FunctionConfiguration, region: String, tags: Map[String, String]): Lambda = Lambda(
     arn = lambda.functionArn(),
     name = lambda.functionName,
     region,
     runtime = lambda.runtime.toString,
+    eventSourceArn = getLambdaEventSource(lambda),
     tags,
     stage = tags.get("Stage"),
     stack = tags.get("Stack")
@@ -57,6 +63,7 @@ case class Lambda(
   name: String,
   region: String,
   runtime: String,
+  eventSourceArn: Option[String],
   tags: Map[String, String],
   override val stage: Option[String],
   override val stack: Option[String]
