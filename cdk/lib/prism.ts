@@ -1,13 +1,10 @@
-import { BlockDeviceVolume, EbsDeviceVolumeType, HealthCheck } from "@aws-cdk/aws-autoscaling";
+import { BlockDeviceVolume, EbsDeviceVolumeType } from "@aws-cdk/aws-autoscaling";
 import { Peer } from "@aws-cdk/aws-ec2";
 import type { App } from "@aws-cdk/core";
-import { Duration } from "@aws-cdk/core";
-import { Stage } from "@guardian/cdk/lib/constants";
-import { GuAutoScalingGroup, GuUserData } from "@guardian/cdk/lib/constructs/autoscaling";
+import { GuUserData } from "@guardian/cdk/lib/constructs/autoscaling";
 import { AppIdentity } from "@guardian/cdk/lib/constructs/core/identity";
 import type { GuStackProps } from "@guardian/cdk/lib/constructs/core/stack";
 import { GuStack } from "@guardian/cdk/lib/constructs/core/stack";
-import { GuVpc } from "@guardian/cdk/lib/constructs/ec2";
 import {
   GuAllowPolicy,
   GuAssumeRolePolicy,
@@ -15,8 +12,9 @@ import {
   GuGetS3ObjectsPolicy,
 } from "@guardian/cdk/lib/constructs/iam";
 import { AccessScope, GuPlayApp } from "@guardian/cdk";
+import { Duration } from "@aws-cdk/core";
 
-export class PrismGuCdkStack extends GuStack {
+export class PrismStack extends GuStack {
   private static app: AppIdentity = {
     app: "prism",
   };
@@ -30,15 +28,15 @@ export class PrismGuCdkStack extends GuStack {
     Until that is fixed, we can safely, manually apply it to all constructs in tree from `this` as it's a single app stack.
     TODO: remove this once @guardian/cdk has been fixed.
      */
-    AppIdentity.taggedConstruct(PrismGuCdkStack.app, this);
+    AppIdentity.taggedConstruct(PrismStack.app, this);
 
-    new GuPlayApp(this, {
-      ...PrismGuCdkStack.app,
+    const app = new GuPlayApp(this, {
+      ...PrismStack.app,
       userData: new GuUserData(this, {
-        ...PrismGuCdkStack.app,
+        ...PrismStack.app,
         distributable: {
           fileName: "prism.deb",
-          executionStatement: `dpkg -i /${PrismGuCdkStack.app.app}/prism.deb`,
+          executionStatement: `dpkg -i /${PrismStack.app.app}/prism.deb`,
         },
       }).userData.render(),
       certificateProps: {
@@ -48,7 +46,6 @@ export class PrismGuCdkStack extends GuStack {
       monitoringConfiguration: { noMonitoring: true },
       access: { scope: AccessScope.RESTRICTED, cidrRanges: [Peer.ipv4("10.0.0.0/8")] },
       roleConfiguration: {
-        withoutLogShipping: true,
         additionalPolicies: [
           new GuAllowPolicy(this, "DescribeEC2BonusPolicy", {
             resources: ["*"],
@@ -63,7 +60,7 @@ export class PrismGuCdkStack extends GuStack {
           }),
         ],
       },
-      accessLogging: { enabled: true, prefix: `ELBLogs/${this.stack}/${PrismGuCdkStack.app.app}/${this.stage}` },
+      accessLogging: { enabled: false, prefix: `ELBLogs/${this.stack}/${PrismStack.app.app}/${this.stage}` },
       scaling: {
         CODE: { minimumInstances: 1 },
         PROD: { minimumInstances: 2 },
@@ -76,6 +73,13 @@ export class PrismGuCdkStack extends GuStack {
           }),
         },
       ],
+    });
+
+    app.targetGroup.configureHealthCheck({
+      path: "/management/healthcheck",
+      unhealthyThresholdCount: 10,
+      interval: Duration.seconds(5),
+      timeout: Duration.seconds(3),
     });
   }
 }
