@@ -1,13 +1,10 @@
-import { BlockDeviceVolume, EbsDeviceVolumeType, HealthCheck } from "@aws-cdk/aws-autoscaling";
+import { BlockDeviceVolume, EbsDeviceVolumeType } from "@aws-cdk/aws-autoscaling";
 import { Peer } from "@aws-cdk/aws-ec2";
 import type { App } from "@aws-cdk/core";
-import { Duration } from "@aws-cdk/core";
-import { Stage } from "@guardian/cdk/lib/constants";
-import { GuAutoScalingGroup, GuUserData } from "@guardian/cdk/lib/constructs/autoscaling";
+import { GuUserData } from "@guardian/cdk/lib/constructs/autoscaling";
 import { AppIdentity } from "@guardian/cdk/lib/constructs/core/identity";
 import type { GuStackProps } from "@guardian/cdk/lib/constructs/core/stack";
 import { GuStack } from "@guardian/cdk/lib/constructs/core/stack";
-import { GuVpc } from "@guardian/cdk/lib/constructs/ec2";
 import {
   GuAllowPolicy,
   GuAssumeRolePolicy,
@@ -23,7 +20,6 @@ export class PrismGuCdkStack extends GuStack {
 
   constructor(scope: App, id: string, props: GuStackProps) {
     super(scope, id, props);
-
     /*
     Looks like some @guardian/cdk constructs are not applying the App tag.
     I suspect since https://github.com/guardian/cdk/pull/326.
@@ -32,8 +28,8 @@ export class PrismGuCdkStack extends GuStack {
      */
     AppIdentity.taggedConstruct(PrismGuCdkStack.app, this);
 
-    const vpc = GuVpc.fromIdParameter(this, "vpc");
-    const subnets = GuVpc.subnetsfromParameter(this);
+    // const vpc = GuVpc.fromIdParameter(this, "vpc");
+    // const subnets = GuVpc.subnetsfromParameter(this);
 
     // const role = new GuInstanceRole(this, {
     //   ...PrismGuCdkStack.app,
@@ -60,43 +56,34 @@ export class PrismGuCdkStack extends GuStack {
     //   ...PrismGuCdkStack.app,
     // });
 
-    const userData = new GuUserData(this, {
-      ...PrismGuCdkStack.app,
-      distributable: {
-        fileName: "prism.deb",
-        executionStatement: `dpkg -i /${PrismGuCdkStack.app.app}/prism.deb`,
-      },
-    });
-
-    const asg = new GuAutoScalingGroup(this, "AutoscalingGroup", {
-      ...PrismGuCdkStack.app,
-      existingLogicalId: "AutoscalingGroup",
-      vpc,
-      vpcSubnets: { subnets },
-      // role: role,
-      userData: userData.userData,
-      stageDependentProps: {
-        [Stage.CODE]: {
-          minimumInstances: 1,
-        },
-        [Stage.PROD]: {
-          minimumInstances: 2,
-        },
-      },
-      healthCheck: HealthCheck.elb({
-        grace: Duration.seconds(500),
-      }),
-      // additionalSecurityGroups: [appServerSecurityGroup],
-      // TODO: Handle this
-      blockDevices: [
-        {
-          deviceName: "/dev/sda1",
-          volume: BlockDeviceVolume.ebs(8, {
-            volumeType: EbsDeviceVolumeType.GP2,
-          }),
-        },
-      ],
-    });
+    // const asg = new GuAutoScalingGroup(this, "AutoscalingGroup", {
+    //   ...PrismGuCdkStack.app,
+    //   existingLogicalId: "AutoscalingGroup",
+    //   vpc,
+    //   vpcSubnets: { subnets },
+    //   // role: role,
+    //   userData: userData.userData,
+    //   stageDependentProps: {
+    //     [Stage.CODE]: {
+    //       minimumInstances: 1,
+    //     },
+    //     [Stage.PROD]: {
+    //       minimumInstances: 2,
+    //     },
+    //   },
+    //   healthCheck: HealthCheck.elb({
+    //     grace: Duration.seconds(500),
+    //   }),
+    //   // additionalSecurityGroups: [appServerSecurityGroup],
+    //   blockDevices: [
+    //     {
+    //       deviceName: "/dev/sda1",
+    //       volume: BlockDeviceVolume.ebs(8, {
+    //         volumeType: EbsDeviceVolumeType.GP2,
+    //       }),
+    //     },
+    //   ],
+    // });
 
     // const loadBalancer = new GuHttpsClassicLoadBalancer(this, "LoadBalancer", {
     //   vpc,
@@ -119,9 +106,15 @@ export class PrismGuCdkStack extends GuStack {
 
     // appServerSecurityGroup.connections.allowFrom(loadBalancer, Port.tcp(9000), "Port 9000 LB to fleet");
 
-    const app = new GuPlayApp(this, {
+    new GuPlayApp(this, {
       ...PrismGuCdkStack.app,
-      userData: userData.userData.render(),
+      userData: new GuUserData(this, {
+        ...PrismGuCdkStack.app,
+        distributable: {
+          fileName: "prism.deb",
+          executionStatement: `dpkg -i /${PrismGuCdkStack.app.app}/prism.deb`,
+        },
+      }).userData.render(),
       certificateProps: {
         CODE: { domainName: "prism.code.dev-gutools.co.uk" },
         PROD: { domainName: "prism.gutools.co.uk" },
@@ -149,6 +142,14 @@ export class PrismGuCdkStack extends GuStack {
         CODE: { minimumInstances: 1 },
         PROD: { minimumInstances: 2 },
       },
+      blockDevices: [
+        {
+          deviceName: "/dev/sda1",
+          volume: BlockDeviceVolume.ebs(8, {
+            volumeType: EbsDeviceVolumeType.GP2,
+          }),
+        },
+      ],
     });
   }
 }
