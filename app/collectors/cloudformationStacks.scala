@@ -36,14 +36,13 @@ case class CloudformationStackCollector(origin: AmazonOrigin, resource: Resource
       .filterNot(_.stackStatusAsString == StackStatus.DELETE_COMPLETE.toString)
       .map{ stack =>
         val resources = client.describeStackResources(DescribeStackResourcesRequest.builder.stackName(stack.stackName).build)
-        val policy = client.getStackPolicy(GetStackPolicyRequest.builder.stackName(stack.stackName).build)
-        CloudformationStack.fromApiData(stack, resources.stackResources.asScala, Option(policy.stackPolicyBody))
+        CloudformationStack.fromApiData(stack, resources.stackResources.asScala)
       }
   }
 }
 
 object CloudformationStack {
-  def fromApiData(stack: Stack, resources: Iterable[StackResource], policy: Option[String]): CloudformationStack = {
+  def fromApiData(stack: Stack, resources: Iterable[StackResource]): CloudformationStack = {
     CloudformationStack(
       arn = stack.stackId,
       name = stack.stackName,
@@ -103,10 +102,7 @@ object CloudformationStack {
           resourceType = resource.resourceType,
           timestamp = resource.timestamp
         )
-      }.toList,
-      policy = policy.map { p =>
-        Try(Json.parse(p)).toOption.getOrElse(JsString(s"Unable to parse policy $policy"))
-      }
+      }.toList
     )
   }
 }
@@ -157,8 +153,7 @@ case class CloudformationStack(
   terminationProtection: Option[Boolean],
   outputs: List[CloudformationStackOutput],
   parameters: List[CloudformationStackParameter],
-  resources: List[CloudformationStackResource],
-  policy: Option[JsValue]
+  resources: List[CloudformationStackResource]
 ) extends IndexedItem {
   def callFromArn: (String) => Call = arn => routes.Api.cloudformationStack(arn)
 }
