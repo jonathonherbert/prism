@@ -36,8 +36,9 @@ case class CloudformationStackCollector(origin: AmazonOrigin, resource: Resource
       .filterNot(_.stackStatusAsString == StackStatus.DELETE_COMPLETE.toString)
       .map{ stack =>
         val resources = client.describeStackResources(DescribeStackResourcesRequest.builder.stackName(stack.stackName).build)
-        val policy = client.getStackPolicy(GetStackPolicyRequest.builder.stackName(stack.stackName).build)
-        CloudformationStack.fromApiData(stack, resources.stackResources.asScala, Option(policy.stackPolicyBody))
+        // Commented out in an attempt to avoid rate limiting exceptions
+        // val policy = client.getStackPolicy(GetStackPolicyRequest.builder.stackName(stack.stackName).build)
+        CloudformationStack.fromApiData(stack, resources.stackResources.asScala, None)
       }
   }
 }
