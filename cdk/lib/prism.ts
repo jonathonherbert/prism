@@ -86,7 +86,7 @@ export class PrismStack extends GuStack {
         },
       },
       healthCheck: HealthCheck.elb({
-        grace: Duration.seconds(500),
+        grace: Duration.seconds(800),
       }),
       additionalSecurityGroups: [appServerSecurityGroup],
       blockDevices: [
